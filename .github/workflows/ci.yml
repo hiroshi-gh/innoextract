@@ -32,6 +32,15 @@ jobs:
     - name: Check Style
       run: cmake --build ${{github.workspace}}/build --target style
 
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ${{ github.workspace }}/build/innoextract
+        asset_name: innoextract
+        tag: ${{ github.ref }}
+        body: "Add binaries"
+
   macos:
     name: macOS build
     runs-on: macos-latest
@@ -42,7 +51,7 @@ jobs:
     - name: Update
       run: brew update
 
-    - name: Workaround for Python install isssues - https://github.com/actions/runner-images/issues/8838
+    - name: Workaround for Python install issues - https://github.com/actions/runner-images/issues/8838
       run: brew install python@3 || brew link --overwrite python@3
 
     - name: Dependencies
@@ -55,3 +64,34 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build
+
+  windows:
+    name: Windows build
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Dependencies
+      uses: johnwason/vcpkg-action@v6
+      id: vcpkg
+      with:
+        pkgs: boost liblzma
+        triplet: x64-windows-static
+        token: ${{ github.token }}
+        github-binarycache: true
+
+    - name: Configure
+      run: cmake --version && cmake -B ${{github.workspace}}/build -Werror=dev -Werror=deprecated -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DVCPKG_APPLOCAL_DEPS=1 -DCONTINUOUS_INTEGRATION=1 -DCMAKE_SH="CMAKE_SH-NOTFOUND"
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ${{ github.workspace }}/build/Debug/innoextract.exe
+        asset_name: innoextract.exe
+        tag: ${{ github.ref }}
+        body: "Add binaries"
