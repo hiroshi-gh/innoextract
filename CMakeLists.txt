@@ -8,40 +8,10 @@ if(DEFINED CMAKE_POLICY_DEFAULT_CMP0167 AND POLICY CMP0167)
 	cmake_policy(SET CMP0167 ${CMAKE_POLICY_DEFAULT_CMP0167})
 endif()
 
-# https://stackoverflow.com/questions/10113017/setting-the-msvc-runtime-in-cmake/56776146#56776146
-set(_change_MSVC_flags FALSE)
-if(WIN32)
-	if (CMAKE_GENERATOR MATCHES "Visual Studio")
-		if(CMAKE_VERSION VERSION_LESS 3.15.0)
-			set(_change_MSVC_flags TRUE)
-		else()
-			# Set MSVC runtime to MultiThreaded (/MT)
-			cmake_policy(SET CMP0091 NEW)
-			set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-		endif()
-	endif()
-endif()
-
 project(innoextract)
 
 
 # Define configuration options
-
-if(_change_MSVC_flags)
-  # Modify compile flags to change MSVC runtime from /MD to /MT
-  set(_re_match "([\\/\\-]M)D")
-  set(_re_replace "\\1T")
-  string(REGEX REPLACE ${_re_match} ${_re_replace}
-    CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  string(REGEX REPLACE ${_re_match} ${_re_replace}
-    CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-  string(REGEX REPLACE ${_re_match} ${_re_replace}
-    CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-  string(REGEX REPLACE ${_re_match} ${_re_replace}
-    CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL}")
-  string(REGEX REPLACE ${_re_match} ${_re_replace}
-    CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	set(MACOS 1)

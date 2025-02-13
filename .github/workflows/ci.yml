@@ -39,6 +39,7 @@ jobs:
         file: ${{ github.workspace }}/build/innoextract
         asset_name: innoextract
         tag: ${{ github.ref }}
+        overwrite: true
         body: "Add binaries"
 
   macos:
@@ -68,24 +69,25 @@ jobs:
   windows:
     name: Windows build
     runs-on: windows-latest
-
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Dependencies
-      uses: johnwason/vcpkg-action@v6
-      id: vcpkg
-      with:
-        pkgs: boost liblzma
-        triplet: x64-windows-static
-        token: ${{ github.token }}
-        github-binarycache: true
 
+    - name: Install Boost with Chocolatey
+      run: choco install boost-msvc-14.3 -y --version 1.87.0
+    
+    - name: Install LZMA
+      shell: powershell
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/ShiftMediaProject/liblzma/releases/download/v5.6.3/liblzma_v5.6.3_msvc17.zip" -OutFile lzma.zip
+        Expand-Archive -Path lzma.zip -DestinationPath "D:\lzma_5_6_3"
+    
     - name: Configure
-      run: cmake --version && cmake -B ${{github.workspace}}/build -Werror=dev -Werror=deprecated -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DVCPKG_APPLOCAL_DEPS=1 -DCONTINUOUS_INTEGRATION=1 -DCMAKE_SH="CMAKE_SH-NOTFOUND"
+      run: cmake --version && cmake -B ${{github.workspace}}\build -Werror=dev -Werror=deprecated -DCONTINUOUS_INTEGRATION=1 -DLZMA_LIBRARY=D:\lzma_5_6_3\lib\x64\liblzma.lib -DLZMA_INCLUDE_DIR=D:\lzma_5_6_3\include
+      env:
+        Boost_DIR: C:\local\boost_1_87_0\lib64-msvc-14.3\cmake\Boost-1.87.0
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build
+      run: cmake --build ${{github.workspace}}\build
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
@@ -94,4 +96,5 @@ jobs:
         file: ${{ github.workspace }}/build/Debug/innoextract.exe
         asset_name: innoextract.exe
         tag: ${{ github.ref }}
+        overwrite: true
         body: "Add binaries"
